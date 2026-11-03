@@ -1,7 +1,19 @@
 import { useState, useEffect } from "react"
 import { Button } from "./components/ui/button"
+import { Input } from "./components/ui/input"
+import Modal from "./components/Modal"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
-export function App() {
+export default function App() {
   const [todos, setTodos] = useState([])
   const [input, setInput] = useState({
     title: "",
@@ -74,38 +86,54 @@ export function App() {
 
   return (
     <>
-      <div className="flex justify-center">
-        <div>
+      <div className="flex justify-center py-10">
+        <div className="rounded-3xl border p-4">
           <h2 className="m-2 font-bold">Todo App</h2>
 
           <div>
-            <input
-              className="mx-2 rounded border border-zinc-500 p-0.5 text-sm"
-              type="text"
-              name="title"
-              value={input.title || ""}
-              onChange={handleChange}
-              placeholder="Add new task"
-            />
-            <input
-              className="mx-2 rounded border border-zinc-500 p-0.5 text-sm"
-              type="text"
-              name="description"
-              value={input.description || ""}
-              onChange={handleChange}
-              placeholder="Add description"
-            />
-            <input
-              className="mx-2 rounded border border-zinc-500 p-0.5 text-sm"
-              type="date"
-              name="date"
-              value={input.date || ""}
-              onChange={handleChange}
-              placeholder="Add date"
-            />
-            <Button onClick={createTodo} type="button" className="">
-              Add
-            </Button>
+            <Dialog>
+              <form>
+                <DialogTrigger
+                  render={<Button variant="outline">Add Task</Button>}
+                />
+                <DialogContent className="sm:max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>Add Task</DialogTitle>
+                  </DialogHeader>
+
+                  <Input
+                    type="text"
+                    name="title"
+                    value={input.title || ""}
+                    onChange={handleChange}
+                    placeholder="Add new task"
+                  />
+                  <Input
+                    type="text"
+                    name="description"
+                    value={input.description || ""}
+                    onChange={handleChange}
+                    placeholder="Add description"
+                  />
+                  <Input
+                    type="date"
+                    name="date"
+                    value={input.date || ""}
+                    onChange={handleChange}
+                    placeholder="Add date"
+                  />
+
+                  <DialogFooter>
+                    <DialogClose
+                      render={<Button variant="outline">Cancel</Button>}
+                    />
+                    <Button onClick={createTodo} type="button" className="">
+                      Add
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </form>
+            </Dialog>
           </div>
 
           <ul>
@@ -113,25 +141,25 @@ export function App() {
               <li key={todo.id}>
                 {editingId === todo.id ? (
                   <>
-                    <input
+                    <Input
                       name="title"
                       type="text"
                       value={editText.title || ""}
-                      className="mx-2 rounded border border-zinc-500 p-0.5 text-sm"
+
                       onChange={handleEdit}
                     />
-                    <input
+                    <Input
                       name="description"
                       type="text"
                       value={editText.description || ""}
-                      className="mx-2 rounded border border-zinc-500 p-0.5 text-sm"
+
                       onChange={handleEdit}
                     />
-                    <input
+                    <Input
                       name="date"
                       type="date"
                       value={editText.date || ""}
-                      className="mx-2 rounded border border-zinc-500 p-0.5 text-sm"
+
                       onChange={handleEdit}
                     />
                     <Button
@@ -151,35 +179,38 @@ export function App() {
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center">
-                      <div className="mx-2 border border-transparent p-1.5">
-                        <div className="flex gap-3">
+                    <div className="justify flex items-center justify-between">
+                      <div className="border border-transparent p-1.5">
+                        <div className="flex gap-3 border-b">
                           <p> {todo.title}</p>
                           <p>{todo.description}</p>
                           <p> {todo.date}</p>
                         </div>
                       </div>
-                      <Button
-                        type="button"
-                        className=""
-                        onClick={() => {
-                          setEditingId(todo.id)
-                          setEditText({
-                            title: todo.title || "",
-                            description: todo.description || "",
-                            date: todo.date || "",
-                          })
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={"destructive"}
-                        onClick={() => deleteTodo(todo.id)}
-                      >
-                        Delete
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          className=""
+                          onClick={() => {
+                            setEditingId(todo.id)
+                            setEditText({
+                              title: todo.title || "",
+                              description: todo.description || "",
+                              date: todo.date || "",
+                            })
+                          }}
+                        >
+                          Edit
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant={"destructive"}
+                          onClick={() => deleteTodo(todo.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
                     </div>
                   </>
                 )}
@@ -191,5 +222,3 @@ export function App() {
     </>
   )
 }
-
-export default App
