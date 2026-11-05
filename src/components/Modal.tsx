@@ -12,11 +12,20 @@ import {
 export default function Modal({
   isOpen,
   onOpenChange,
-  title,
+  title, // Fixed: correctly maps from 'title' prop
   formValues,
   onChange,
   onSubmit,
   submitText = "Save",
+
+  // Dynamic field configuration props with sensible defaults
+  firstFieldName = "name",
+  firstPlaceholder = "Name",
+  secondFieldName = "description",
+  secondPlaceholder = "Description",
+  thirdFieldName = "price",
+  thirdInType = "text",
+  thirdPlaceholder = "Price",
 }) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -26,31 +35,38 @@ export default function Modal({
         </DialogHeader>
 
         <div className="flex flex-col gap-3 py-2">
+          {/* First Field */}
           <Input
             type="text"
-            name="title"
-            value={formValues.title || ""}
+            name={firstFieldName}
+            value={formValues[firstFieldName] || ""}
             onChange={onChange}
-            placeholder="Task title"
+            placeholder={firstPlaceholder}
           />
+
+          {/* Second Field */}
           <Input
             type="text"
-            name="description"
-            value={formValues.description || ""}
+            name={secondFieldName}
+            value={formValues[secondFieldName] || ""}
             onChange={onChange}
-            placeholder="Add description"
+            placeholder={secondPlaceholder}
           />
+
+          {/* Third Field (Dynamic Type/Name) */}
           <Input
-            type="date"
-            name="date"
-            value={formValues.date || ""}
+            type={thirdInType}
+            name={thirdFieldName}
+            value={formValues[thirdFieldName] || ""}
             onChange={onChange}
-            placeholder="Add date"
+            placeholder={thirdPlaceholder}
           />
         </div>
 
         <DialogFooter>
-          <DialogClose render={<Button variant="outline">Cancel</Button>} />
+          <DialogClose asChild>
+            <Button variant="outline">Cancel</Button>
+          </DialogClose>
           <Button type="button" onClick={onSubmit}>
             {submitText}
           </Button>

@@ -21,7 +21,7 @@ export default function Todo() {
     date: "",
   })
 
-  const API_URL = "http://192.168.68.105:5000/todos"
+  const API_URL = "http://192.168.68.106:5000/todos"
 
   async function getTodos() {
     const response = await fetch(API_URL)
@@ -99,6 +99,13 @@ export default function Todo() {
           onChange={handleChange}
           onSubmit={createTodo}
           submitText="Add"
+          firstFieldName="title"
+          firstPlaceholder="Task title"
+          secondFieldName="description"
+          secondPlaceholder="Task description"
+          thirdFieldName="date"
+          thirdInType="date"
+          thirdPlaceholder="task date"
         />
 
         <Modal
@@ -107,11 +114,18 @@ export default function Todo() {
             setIsEditOpen(open)
             if (!open) setEditingId(null)
           }}
-          title="Edit Task"
+          title="Edit Product"
           formValues={editText}
           onChange={handleEditChange}
           onSubmit={() => updateTodo(editingId)}
           submitText="Save"
+          firstFieldName="title"
+          firstPlaceholder="Task title"
+          secondFieldName="description"
+          secondPlaceholder="Task description"
+          thirdFieldName="date"
+          thirdInType="date"
+          thirdPlaceholder="task date"
         />
 
         <ul className="space-y-4">
