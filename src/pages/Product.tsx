@@ -7,10 +7,12 @@ import { ReusableFormInputs } from "@/components/common/ReusableFormInputs"
 import * as z from "zod"
 
 export default function Product() {
-  const Player = z.object({
-    username: z.string(),
-    xp: z.number(),
+  const ProductSchema = z.object({
+    name: z.string().min(2, "Product name must be at least 2 characters"),
+    description: z.string().min(5, "Description must be at least 5 characters"),
+    price: z.coerce.number().positive("Price must be greater than zero"),
   })
+
   const [products, setProducts] = useState([])
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [input, setInput] = useState({
@@ -19,7 +21,11 @@ export default function Product() {
     price: "",
   })
 
-  // Edit State
+  const [errorMessage, setErrorMessage] = useState({
+    name: "",
+    description: "",
+    price: "",
+  })
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [editText, setEditText] = useState({
@@ -31,13 +37,32 @@ export default function Product() {
   const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/products`
 
   const productFields = [
-    { name: "name", type: "text", placeholder: "Product name", required: true },
-    { name: "description", type: "text", placeholder: "Product description" },
+    {
+      name: "name",
+      labelFor: "product-name",
+      label: "Product Name",
+      placeholder: "e.g., Wireless Mouse",
+      required: true,
+      errorMessage: errorMessage?.name,
+    },
+    {
+      name: "description",
+      labelFor: "product-description",
+      label: "Product Description",
+      type: "text",
+      placeholder: "Product description",
+      errorMessage: errorMessage?.description,
+      required: true,
+    },
     {
       name: "price",
+      labelFor: "product-price",
+      label: "Price",
       type: "number",
-      placeholder: "Product price",
-      step: "any",
+      step: "0.01",
+      placeholder: "0.00",
+      required: true,
+      errorMessage: errorMessage?.price,
     },
   ]
 
@@ -63,6 +88,23 @@ export default function Product() {
   }
 
   async function addProducts() {
+    const result = ProductSchema.safeParse(input)
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors
+
+      setErrorMessage({
+        name: errors.name?.[0] || "",
+        description: errors.description?.[0] || "",
+        price: errors.price?.[0] || "",
+      })
+
+      return
+    }
+    setErrorMessage({
+      name: "",
+      description: "",
+      price: "",
+    })
     if (!input.name || !input.name.trim()) return
     try {
       const response = await fetch(`${apiUrl}/add-product`, {
@@ -75,7 +117,7 @@ export default function Product() {
       })
 
       const newProduct = await response.json()
-      if (newProduct.success) {
+      if (result.success) {
         setProducts([...products, newProduct.data])
         setInput({ name: "", description: "", price: "" })
         setIsAddOpen(false)
@@ -88,7 +130,24 @@ export default function Product() {
   }
 
   async function updateProduct(id) {
+    const result = ProductSchema.safeParse(editText)
+    if (!result.success) {
+      const errors = result.error.flatten().fieldErrors
+
+      setErrorMessage({
+        name: errors.name?.[0] || "",
+        description: errors.description?.[0] || "",
+        price: errors.price?.[0] || "",
+      })
+      return
+    }
+    setErrorMessage({
+      name: "",
+      description: "",
+      price: "",
+    })
     if (!id || !editText.name || !editText.name.trim()) return
+
     try {
       const response = await fetch(`${apiUrl}/update-product/${id}`, {
         method: "PUT",
@@ -99,8 +158,7 @@ export default function Product() {
         }),
       })
       const updatedData = await response.json()
-
-      if (updatedData.success) {
+      if (result.success) {
         setProducts(
           products.map((product) =>
             product.id === id ? updatedData.data : product
@@ -145,7 +203,6 @@ export default function Product() {
           </Button>
         </div>
 
-        {/* Add Modal */}
         <CustomModal
           isOpen={isAddOpen}
           onOpenChange={setIsAddOpen}
