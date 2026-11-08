@@ -1,9 +1,16 @@
 import { useState, useEffect } from "react"
 import { Button } from "../components/ui/button"
-import Modal from "../components/Modal"
-import { Trash2, Edit2Icon } from "lucide-react" // Fixed DeleteIcon to standard Lucide name if needed
+import { Trash2, Edit2Icon } from "lucide-react"
+import { showErrorToast, showSuccessToast } from "@/utils/toast"
+import { CustomModal } from "@/components/common/Modal"
+import { ReusableFormInputs } from "@/components/common/ReusableFormInputs"
+import * as z from "zod"
 
 export default function Product() {
+  const Player = z.object({
+    username: z.string(),
+    xp: z.number(),
+  })
   const [products, setProducts] = useState([])
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [input, setInput] = useState({
@@ -12,7 +19,7 @@ export default function Product() {
     price: "",
   })
 
-  // Edit Product Modal State
+  // Edit State
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [editText, setEditText] = useState({
@@ -21,15 +28,27 @@ export default function Product() {
     price: "",
   })
 
-  const API_URL = "http://192.168.68.106:5000/products"
+  const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/products`
+
+  const productFields = [
+    { name: "name", type: "text", placeholder: "Product name", required: true },
+    { name: "description", type: "text", placeholder: "Product description" },
+    {
+      name: "price",
+      type: "number",
+      placeholder: "Product price",
+      step: "any",
+    },
+  ]
 
   async function getProducts() {
     try {
-      const response = await fetch(`${API_URL}/get-products`)
+      const response = await fetch(`${apiUrl}/get-products`)
       const data = await response.json()
       setProducts(data.data || [])
     } catch (error) {
       console.error("Failed to fetch products:", error)
+      showErrorToast("Failed to fetch products")
     }
   }
 
@@ -38,15 +57,20 @@ export default function Product() {
     setInput((values) => ({ ...values, [name]: value }))
   }
 
+  const handleEditChange = (e) => {
+    const { name, value } = e.target
+    setEditText((values) => ({ ...values, [name]: value }))
+  }
+
   async function addProducts() {
     if (!input.name || !input.name.trim()) return
     try {
-      const response = await fetch(`${API_URL}/add-product`, {
+      const response = await fetch(`${apiUrl}/add-product`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...input,
-          price: parseFloat(input.price) || 0,
+          price: parseFloat(String(input.price)) || 0,
         }),
       })
 
@@ -55,27 +79,23 @@ export default function Product() {
         setProducts([...products, newProduct.data])
         setInput({ name: "", description: "", price: "" })
         setIsAddOpen(false)
+        showSuccessToast("Product added successfully")
       }
     } catch (error) {
       console.error("Failed to add product:", error)
+      showErrorToast(error.message || "Failed to add product")
     }
   }
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target
-    setEditText((values) => ({ ...values, [name]: value }))
-  }
-
   async function updateProduct(id) {
-    if (!editText.name || !editText.name.trim()) return
+    if (!id || !editText.name || !editText.name.trim()) return
     try {
-      // Matching your backend update endpoint route structure
-      const response = await fetch(`${API_URL}/update-product/${id}`, {
+      const response = await fetch(`${apiUrl}/update-product/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...editText,
-          price: parseFloat(editText.price) || 0,
+          price: parseFloat(String(editText.price)) || 0,
         }),
       })
       const updatedData = await response.json()
@@ -89,20 +109,24 @@ export default function Product() {
         setIsEditOpen(false)
         setEditingId(null)
         setEditText({ name: "", description: "", price: "" })
+        showSuccessToast("Product updated successfully")
       }
     } catch (error) {
       console.error("Failed to update product:", error)
+      showErrorToast("Failed to update product")
     }
   }
 
   async function deleteProduct(id) {
     try {
-      await fetch(`${API_URL}/delete-product/${id}`, {
+      await fetch(`${apiUrl}/delete-product/${id}`, {
         method: "DELETE",
       })
       setProducts(products.filter((product) => product.id !== id))
+      showSuccessToast("Product deleted successfully")
     } catch (error) {
       console.error("Failed to delete product:", error)
+      showErrorToast("Failed to delete product")
     }
   }
 
@@ -121,42 +145,49 @@ export default function Product() {
           </Button>
         </div>
 
-        <Modal
+        {/* Add Modal */}
+        <CustomModal
           isOpen={isAddOpen}
           onOpenChange={setIsAddOpen}
-          title="Add Product"
-          formValues={input}
-          onChange={handleChange}
-          onSubmit={addProducts}
+          title="Create New Product"
           submitText="Add"
-          firstFieldName="name"
-          firstPlaceholder="Product name"
-          secondFieldName="description"
-          secondPlaceholder="Product description"
-          thirdFieldName="price"
-          thirdInType="number"
-          thirdPlaceholder="Product price"
-        />
+          formId="product-add-form"
+        >
+          <ReusableFormInputs
+            formId="product-add-form"
+            fields={productFields}
+            formValues={input}
+            onChange={handleChange}
+            onSubmit={(e) => {
+              e.preventDefault()
+              addProducts()
+            }}
+          />
+        </CustomModal>
 
-        <Modal
+        {/* Edit Modal */}
+        <CustomModal
           isOpen={isEditOpen}
           onOpenChange={(open) => {
             setIsEditOpen(open)
             if (!open) setEditingId(null)
           }}
           title="Edit Product"
-          formValues={editText}
-          onChange={handleEditChange}
-          onSubmit={() => updateProduct(editingId)}
-          submitText="Save"
-          firstFieldName="name"
-          firstPlaceholder="Product name"
-          secondFieldName="description"
-          secondPlaceholder="Product description"
-          thirdFieldName="price"
-          thirdInType="number"
-          thirdPlaceholder="Product price"
-        />
+          submitText="Save Changes"
+          formId="product-edit-form"
+        >
+          <ReusableFormInputs
+            formId="product-edit-form"
+            fields={productFields}
+            formValues={editText}
+            onChange={handleEditChange}
+            onSubmit={(e) => {
+              e.preventDefault()
+              updateProduct(editingId)
+            }}
+          />
+        </CustomModal>
+
         <ul className="space-y-4">
           {products.map((product) => (
             <li key={product.id} className="border-b pb-3">
@@ -180,14 +211,13 @@ export default function Product() {
                       setEditText({
                         name: product.name || "",
                         description: product.description || "",
-                        price: product.price || "",
+                        price: String(product.price || ""),
                       })
                       setIsEditOpen(true)
                     }}
                   >
                     <Edit2Icon className="size-4" />
                   </Button>
-
                   <Button
                     type="button"
                     variant="destructive"
